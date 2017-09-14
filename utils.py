@@ -45,9 +45,9 @@ class DataSet:
 
 class GloveDictionary:
 
-    def __init__(self):
+    def __init__(self, d = 50):
 
-        f = open('data/glove.6B.50d.txt')
+        f = open('data/glove.6B.{}d.txt'.format(d))
 
         self._word_vector_table = {}
         
@@ -58,8 +58,6 @@ class GloveDictionary:
             self._word_vector_table[word] = vector
 
         f.close()
-
-        self.dw = len([v for v in self._word_vector_table.values()][0])
 
     def try_get_word(self, word):
         try:

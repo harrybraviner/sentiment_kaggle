@@ -1,6 +1,6 @@
 #! /usr/bin/python3
 
-import utils, re
+import utils, re, argparse, time
 import numpy as np
 import tensorflow as tf
 
@@ -96,15 +96,19 @@ def make_bias(size):
 
 def main():
 
-    dataset = utils.DataSet()
-    word_dictionary = utils.GloveDictionary()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('log_directory', type=str)
 
-    dw = word_dictionary.dw
-    #dw = 50
+    log_dir = parser.log_directory
+
     n_h1 = 1024
     n_h2 = 1024
     n_classes = 5
     l2_cost = 1e-4
+    dw = 50
+
+    dataset = utils.DataSet()
+    word_dictionary = utils.GloveDictionary(d = dw)
 
     x = tf.placeholder(dtype=tf.float32, shape = [None, dw])
 
@@ -134,21 +138,32 @@ def main():
     sess = tf.Session()
     sess.run(tf.global_variables_initializer())
 
-    outfile = open('training.dat', 'wt')
-    outfile.write("#iteration\tcross_entropy\tvalidation error\n")
+    training_filename = '{}/training.dat'.format(log_dir)
+    outfile = open(training_filename, 'wt')
+    outfile.write("#iteration\ttime (s)\tcross_entropy\tvalidation error\n")
     outfile.close()
 
+    specfile = open('{}/specification'.format(log_dir), 'wt')
+    specfile.write('n_h1: {}\n'.format(n_h1))
+    specfile.write('n_h2: {}\n'.format(n_h2))
+    specfile.write('l2_cost: {}\n'.format(l2_cost))
+    specfile.write('glove dw: {}\n'.format(dw))
+    specfile.close()
+
     #train_single_case(dataset, word_dictionary, optimizer, x, y, sess)
+    start_time = time.time()
     for i in range(40000):
         ce_val = train_batch(dataset, word_dictionary, optimizer, x, y, sess, cross_entropy, 64)
 
         if i%100 == 0:
-            print("Iteration {}\nCross-entropy: {}\n".format(i, ce_val))
+            time_elapsed = time.time() - start_time
+            print("Iteration {}\nCross-entropy: {}".format(i, ce_val))
+            print("Time: {}".format(time_elapsed))
             frac_correct = evaluate_validation(dataset, word_dictionary, x, y, sess, correct_count)
             print("Frac correct on validation: {}\n".format(frac_correct))
 
-            outfile = open('training.dat', 'at')
-            outfile.write("{}\t{}\t{}\n".format(i, ce_val, frac_correct))
+            outfile = open(training_filename, 'at')
+            outfile.write("{}\t{}\t{}\t{}\n".format(i, time_elapsed, ce_val, frac_correct))
             outfile.close()
 
             
