@@ -1,6 +1,6 @@
 #! /usr/bin/python3
 
-import utils, re, argparse, time
+import utils, re, argparse, time, os, sys
 import numpy as np
 import tensorflow as tf
 
@@ -98,8 +98,15 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('log_directory', type=str)
+    args = parser.parse_args()
 
-    log_dir = parser.log_directory
+    log_dir = args.log_directory
+
+    if os.path.exists(log_dir):
+        print('Log directory {} already exists. Aborting.'.format(log_dir), file=sys.stderr)
+        return -1
+
+    os.mkdir(log_dir)
 
     n_h1 = 1024
     n_h2 = 1024
@@ -155,7 +162,7 @@ def main():
     for i in range(40000):
         ce_val = train_batch(dataset, word_dictionary, optimizer, x, y, sess, cross_entropy, 64)
 
-        if i%100 == 0:
+        if i%200 == 0:
             time_elapsed = time.time() - start_time
             print("Iteration {}\nCross-entropy: {}".format(i, ce_val))
             print("Time: {}".format(time_elapsed))
